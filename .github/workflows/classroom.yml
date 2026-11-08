@@ -1,0 +1,45 @@
+name: GitHub Classroom Workflow
+'on':
+  - push
+  - workflow_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Create virtual environment and install dependencies
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run all tests with pytest
+      run: |
+        source venv/bin/activate
+        python -m pytest tests/ -v --tb=short
+        
+    - name: Generate test summary
+      if: always()
+      run: |
+        source venv/bin/activate
+        echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        python -m pytest tests/ -v --tb=no | tee test_output.txt
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        cat test_output.txt >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
